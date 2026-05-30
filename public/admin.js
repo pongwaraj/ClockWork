@@ -78,6 +78,7 @@ async function loadRecords() {
           <div class="time">${formatTime(item.timestamp)}</div>
           <div class="meta">📍 ${item.distance} ม.</div>
           <div class="meta">🖥️ ${escapeHtml(item.device_ip)}</div>
+          <div class="meta">🆔 ${escapeHtml(item.device_id)}</div>
           <div class="meta device-ua" title="${escapeHtml(item.device_name)}">📱 ${escapeHtml(shortUA(item.device_name))}</div>
         </div>
         <button class="btn btn-small btn-danger" onclick="deleteRecord(${item.id})">🗑️</button>

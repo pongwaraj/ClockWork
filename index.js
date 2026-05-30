@@ -27,9 +27,13 @@ async function initDb() {
       distance INTEGER NOT NULL,
       device_ip TEXT NOT NULL DEFAULT '',
       device_name TEXT NOT NULL DEFAULT '',
+      device_id TEXT NOT NULL DEFAULT '',
       timestamp TIMESTAMPTZ NOT NULL DEFAULT NOW()
     )
   `);
+  await pool.query(`
+    ALTER TABLE attendance ADD COLUMN IF NOT EXISTS device_id TEXT NOT NULL DEFAULT ''
+  `).catch(() => {});
 }
 
 function requireAdmin(req, res, next) {
@@ -62,7 +66,7 @@ app.get("/api/employees", (_req, res) => {
 });
 
 app.post("/api/clock", async (req, res) => {
-  const { employee_name, action, latitude, longitude } = req.body;
+  const { employee_name, action, latitude, longitude, device_id } = req.body;
 
   if (!employee_name || !action || latitude == null || longitude == null) {
     return res.status(400).json({ error: "Missing required fields" });
@@ -85,9 +89,11 @@ app.post("/api/clock", async (req, res) => {
   const ip = req.headers["x-forwarded-for"]?.split(",")[0]?.trim() || req.ip || "unknown";
   const ua = req.headers["user-agent"] || "unknown";
 
+  const devId = device_id || "unknown";
+
   await pool.query(
-    "INSERT INTO attendance (employee_name, action, latitude, longitude, distance, device_ip, device_name) VALUES ($1, $2, $3, $4, $5, $6, $7)",
-    [employee_name, action, latitude, longitude, loc.distance, ip, ua]
+    "INSERT INTO attendance (employee_name, action, latitude, longitude, distance, device_ip, device_name, device_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)",
+    [employee_name, action, latitude, longitude, loc.distance, ip, ua, devId]
   );
 
   res.json({

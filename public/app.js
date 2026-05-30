@@ -8,6 +8,17 @@ const historyList = document.getElementById("historyList");
 let currentPos = null;
 let officeLocation = null;
 
+function getDeviceId() {
+  let id = localStorage.getItem("clockwork_device_id");
+  if (!id) {
+    id = crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(36) + Math.random().toString(36).slice(2);
+    localStorage.setItem("clockwork_device_id", id);
+  }
+  return id;
+}
+
+const DEVICE_ID = getDeviceId();
+
 async function fetchEmployees() {
   const res = await fetch("/api/employees");
   const names = await res.json();
@@ -105,6 +116,7 @@ async function clock(action) {
         action,
         latitude: currentPos.lat,
         longitude: currentPos.lng,
+        device_id: DEVICE_ID,
       }),
     });
 
@@ -142,7 +154,7 @@ async function loadHistory() {
             ${item.action === 'in' ? 'เข้างาน' : 'ออกงาน'}
           </span>
           <div class="time">${formatTime(item.timestamp)}</div>
-          <div class="meta">${item.distance} ม. · ${escapeHtml(item.device_ip)}</div>
+          <div class="meta">${item.distance} ม. · ${escapeHtml(shortDevId(item.device_id))}</div>
         </div>
         <div style="font-size:0.75rem;color:#999">${item.distance} ม.</div>
       </div>
@@ -150,6 +162,10 @@ async function loadHistory() {
   } catch {
     historyList.innerHTML = '<p class="muted">โหลดประวัติไม่สำเร็จ</p>';
   }
+}
+
+function shortDevId(id) {
+  return id && id.length > 8 ? id.slice(0, 8) + "…" : id || "—";
 }
 
 function escapeHtml(text) {
