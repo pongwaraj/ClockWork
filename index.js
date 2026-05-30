@@ -1,10 +1,14 @@
 const express = require("express");
+const path = require("path");
 const { getDb, persist } = require("./db");
 const { validateLocation } = require("./location");
 
 const app = express();
 app.use(express.json());
-app.use(express.static("public"));
+app.use(express.static(path.join(__dirname, "public")));
+
+// Pre-init DB on cold start
+let dbReady = getDb();
 
 app.post("/api/clock", async (req, res) => {
   const { employee_name, action, latitude, longitude } = req.body;
@@ -25,7 +29,7 @@ app.post("/api/clock", async (req, res) => {
   }
 
   const now = new Date().toISOString();
-  const db = await getDb();
+  const db = await dbReady;
   db.run(
     "INSERT INTO attendance (employee_name, action, latitude, longitude, distance, timestamp) VALUES (?, ?, ?, ?, ?, ?)",
     [employee_name, action, latitude, longitude, loc.distance, now]
@@ -39,7 +43,7 @@ app.post("/api/clock", async (req, res) => {
 });
 
 app.get("/api/history", async (_req, res) => {
-  const db = await getDb();
+  const db = await dbReady;
   const results = db.exec("SELECT * FROM attendance ORDER BY timestamp DESC LIMIT 100");
   const rows = results[0] ? results[0].values.map((v) => {
     const cols = results[0].columns;
@@ -53,7 +57,13 @@ app.get("/api/location", (_req, res) => {
   res.json({ office_lat: OFFICE_LAT, office_lng: OFFICE_LNG, max_distance: MAX_DISTANCE_M });
 });
 
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  console.log(`ClockWork running at http://localhost:${PORT}`);
-});
+// Export for Vercel serverless
+module.exports = app;
+
+// Local dev
+if (require.main === module) {
+  const PORT = process.env.PORT || 3000;
+  app.listen(PORT, () => {
+    console.log(`ClockWork running at http://localhost:${PORT}`);
+  });
+}
