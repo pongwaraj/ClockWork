@@ -1,12 +1,12 @@
 const express = require("express");
-const db = require("./db");
+const { getDb, persist } = require("./db");
 const { validateLocation } = require("./location");
 
 const app = express();
 app.use(express.json());
 app.use(express.static("public"));
 
-app.post("/api/clock", (req, res) => {
+app.post("/api/clock", async (req, res) => {
   const { employee_name, action, latitude, longitude } = req.body;
 
   if (!employee_name || !action || latitude == null || longitude == null) {
@@ -25,10 +25,12 @@ app.post("/api/clock", (req, res) => {
   }
 
   const now = new Date().toISOString();
-  const stmt = db.prepare(
-    "INSERT INTO attendance (employee_name, action, latitude, longitude, distance, timestamp) VALUES (?, ?, ?, ?, ?, ?)"
+  const db = await getDb();
+  db.run(
+    "INSERT INTO attendance (employee_name, action, latitude, longitude, distance, timestamp) VALUES (?, ?, ?, ?, ?, ?)",
+    [employee_name, action, latitude, longitude, loc.distance, now]
   );
-  stmt.run(employee_name, action, latitude, longitude, loc.distance, now);
+  persist();
 
   res.json({
     message: `บันทึกการ${action === "in" ? "เข้างาน" : "ออกงาน"}ของ ${employee_name} เรียบร้อย`,
@@ -36,10 +38,13 @@ app.post("/api/clock", (req, res) => {
   });
 });
 
-app.get("/api/history", (req, res) => {
-  const rows = db
-    .prepare("SELECT * FROM attendance ORDER BY timestamp DESC LIMIT 100")
-    .all();
+app.get("/api/history", async (_req, res) => {
+  const db = await getDb();
+  const results = db.exec("SELECT * FROM attendance ORDER BY timestamp DESC LIMIT 100");
+  const rows = results[0] ? results[0].values.map((v) => {
+    const cols = results[0].columns;
+    return cols.reduce((obj, col, i) => { obj[col] = v[i]; return obj; }, {});
+  }) : [];
   res.json(rows);
 });
 
