@@ -65,6 +65,9 @@ app.post("/api/clock", (req, res) => {
     });
   }
 
+  const ip = req.headers["x-forwarded-for"]?.split(",")[0]?.trim() || req.ip || "unknown";
+  const ua = req.headers["user-agent"] || "unknown";
+
   attendance.unshift({
     id: nextId++,
     employee_name,
@@ -72,6 +75,8 @@ app.post("/api/clock", (req, res) => {
     latitude,
     longitude,
     distance: loc.distance,
+    device_ip: ip,
+    device_name: ua,
     timestamp: new Date().toISOString(),
   });
 

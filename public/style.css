@@ -268,3 +268,16 @@ input[type="password"], select {
   align-items: center;
   font-weight: 600;
 }
+
+.meta {
+  font-size: 0.75rem;
+  color: #999;
+  margin-top: 1px;
+}
+
+.device-ua {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 250px;
+}

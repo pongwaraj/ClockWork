@@ -142,6 +142,7 @@ async function loadHistory() {
             ${item.action === 'in' ? 'เข้างาน' : 'ออกงาน'}
           </span>
           <div class="time">${formatTime(item.timestamp)}</div>
+          <div class="meta">${item.distance} ม. · ${escapeHtml(item.device_ip)}</div>
         </div>
         <div style="font-size:0.75rem;color:#999">${item.distance} ม.</div>
       </div>

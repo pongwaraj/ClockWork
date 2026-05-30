@@ -70,12 +70,15 @@ async function loadRecords() {
 
     recordList.innerHTML = data.map((item) => `
       <div class="history-item">
-        <div>
+        <div style="flex:1;min-width:0">
           <span class="name">${escapeHtml(item.employee_name)}</span>
           <span class="badge ${item.action === 'in' ? 'badge-in' : 'badge-out'}">
             ${item.action === 'in' ? 'เข้างาน' : 'ออกงาน'}
           </span>
           <div class="time">${formatTime(item.timestamp)}</div>
+          <div class="meta">📍 ${item.distance} ม.</div>
+          <div class="meta">🖥️ ${escapeHtml(item.device_ip)}</div>
+          <div class="meta device-ua" title="${escapeHtml(item.device_name)}">📱 ${escapeHtml(shortUA(item.device_name))}</div>
         </div>
         <button class="btn btn-small btn-danger" onclick="deleteRecord(${item.id})">🗑️</button>
       </div>
@@ -105,6 +108,15 @@ async function deleteRecord(id) {
   } catch {
     showStatus("ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์", "error");
   }
+}
+
+function shortUA(ua) {
+  if (ua.includes("Edg/")) return "Edge " + (ua.match(/Edg\/(\S+)/) || [])[1] || "";
+  if (ua.includes("Chrome/")) return "Chrome " + (ua.match(/Chrome\/(\S+)/) || [])[1] || "";
+  if (ua.includes("Firefox/")) return "Firefox " + (ua.match(/Firefox\/(\S+)/) || [])[1] || "";
+  if (ua.includes("Safari/")) return "Safari " + (ua.match(/Version\/(\S+)/) || [])[1] || "";
+  if (ua.startsWith("Mozilla/")) return "Browser";
+  return ua.substring(0, 40);
 }
 
 function escapeHtml(text) {
