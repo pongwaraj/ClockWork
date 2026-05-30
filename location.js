@@ -1,5 +1,5 @@
-const OFFICE_LAT = 13.736717;
-const OFFICE_LNG = 100.523186;
+const OFFICE_LAT = 18.771689;
+const OFFICE_LNG = 98.978277;
 const MAX_DISTANCE_M = 50;
 
 function toRad(deg) {

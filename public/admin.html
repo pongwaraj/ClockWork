@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ClockWork - Admin</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <div class="container">
+    <div class="top-bar">
+      <h1>🔧 Admin</h1>
+      <a href="/" class="admin-link">⏰</a>
+    </div>
+    <p class="subtitle">จัดการข้อมูลเข้างาน-ออกงาน</p>
+
+    <div class="status" id="status"></div>
+
+    <div class="card" id="loginCard">
+      <label for="password">รหัสผ่านผู้ดูแล</label>
+      <input type="password" id="password" placeholder="กรอกรหัสผ่าน">
+      <button class="btn btn-primary" onclick="login()">เข้าสู่ระบบ</button>
+    </div>
+
+    <div class="card" id="adminPanel" style="display:none">
+      <div class="admin-header">
+        <span>👤 Admin</span>
+        <button class="btn btn-small btn-outline" onclick="logout()">ออกจากระบบ</button>
+      </div>
+    </div>
+
+    <div class="card history" id="recordsCard" style="display:none">
+      <h2>ทั้งหมด (แตกลบ record)</h2>
+      <div id="recordList"><p class="muted">กำลังโหลด...</p></div>
+    </div>
+  </div>
+
+  <script src="/admin.js"></script>
+</body>
+</html>

@@ -8,14 +8,19 @@
 </head>
 <body>
   <div class="container">
-    <h1>⏰ ClockWork</h1>
+    <div class="top-bar">
+      <h1>⏰ ClockWork</h1>
+      <a href="/admin.html" class="admin-link">🔧</a>
+    </div>
     <p class="subtitle">ระบบบันทึกเวลาเข้างาน-ออกงาน</p>
 
     <div class="status" id="status"></div>
 
     <div class="card">
-      <label for="name">ชื่อพนักงาน</label>
-      <input type="text" id="name" placeholder="เช่น สมชาย ใจดี" autocomplete="name">
+      <label for="employee">พนักงาน</label>
+      <select id="employee">
+        <option value="">-- เลือกพนักงาน --</option>
+      </select>
 
       <div class="gps-info" id="gpsInfo">
         <span id="gpsStatus">📍 กำลังหาสัญญาณ GPS...</span>

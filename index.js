@@ -1,13 +1,48 @@
 const express = require("express");
 const path = require("path");
+const crypto = require("crypto");
 const { validateLocation } = require("./location");
 
 const app = express();
 app.use(express.json());
 app.use(express.static(path.join(__dirname, "public")));
 
+const EMPLOYEES = ["น้ำฝน รัศมี", "โชโช เซน"];
+const ADMIN_PASSWORD = "exd1919887";
+const ADMIN_TOKEN = crypto.randomBytes(32).toString("hex");
+
 const attendance = [];
 let nextId = 1;
+
+function requireAdmin(req, res, next) {
+  const token = req.headers.authorization;
+  if (token !== `Bearer ${ADMIN_TOKEN}`) {
+    return res.status(401).json({ error: "Unauthorized" });
+  }
+  next();
+}
+
+app.post("/api/admin/login", (req, res) => {
+  const { password } = req.body;
+  if (password !== ADMIN_PASSWORD) {
+    return res.status(403).json({ error: "รหัสผ่านไม่ถูกต้อง" });
+  }
+  res.json({ token: ADMIN_TOKEN });
+});
+
+app.delete("/api/admin/record/:id", requireAdmin, (req, res) => {
+  const id = parseInt(req.params.id);
+  const idx = attendance.findIndex((r) => r.id === id);
+  if (idx === -1) {
+    return res.status(404).json({ error: "ไม่พบ record" });
+  }
+  attendance.splice(idx, 1);
+  res.json({ message: "ลบ record เรียบร้อย" });
+});
+
+app.get("/api/employees", (_req, res) => {
+  res.json(EMPLOYEES);
+});
 
 app.post("/api/clock", (req, res) => {
   const { employee_name, action, latitude, longitude } = req.body;
@@ -17,6 +52,9 @@ app.post("/api/clock", (req, res) => {
   }
   if (!["in", "out"].includes(action)) {
     return res.status(400).json({ error: "action must be 'in' or 'out'" });
+  }
+  if (!EMPLOYEES.includes(employee_name)) {
+    return res.status(400).json({ error: "พนักงานไม่ถูกต้อง" });
   }
 
   const loc = validateLocation(latitude, longitude);

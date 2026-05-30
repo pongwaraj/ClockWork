@@ -1,4 +1,4 @@
-const nameInput = document.getElementById("name");
+const employeeSelect = document.getElementById("employee");
 const statusDiv = document.getElementById("status");
 const gpsStatus = document.getElementById("gpsStatus");
 const gpsCoords = document.getElementById("gpsCoords");
@@ -7,6 +7,18 @@ const historyList = document.getElementById("historyList");
 
 let currentPos = null;
 let officeLocation = null;
+
+async function fetchEmployees() {
+  const res = await fetch("/api/employees");
+  const names = await res.json();
+  employeeSelect.innerHTML = '<option value="">-- เลือกพนักงาน --</option>';
+  names.forEach((name) => {
+    const opt = document.createElement("option");
+    opt.value = name;
+    opt.textContent = name;
+    employeeSelect.appendChild(opt);
+  });
+}
 
 async function fetchOfficeLocation() {
   const res = await fetch("/api/location");
@@ -71,10 +83,10 @@ function toRad(deg) {
 }
 
 async function clock(action) {
-  const name = nameInput.value.trim();
+  const name = employeeSelect.value;
   if (!name) {
-    showStatus("กรุณากรอกชื่อพนักงาน", "error");
-    nameInput.focus();
+    showStatus("กรุณาเลือกพนักงาน", "error");
+    employeeSelect.focus();
     return;
   }
   if (!currentPos) {
@@ -104,7 +116,7 @@ async function clock(action) {
       showStatus(data.message, "success");
       loadHistory();
     }
-  } catch (err) {
+  } catch {
     showStatus("ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์", "error");
   }
 }
@@ -122,7 +134,7 @@ async function loadHistory() {
       return;
     }
 
-    historyList.innerHTML = data.map(item => `
+    historyList.innerHTML = data.map((item) => `
       <div class="history-item">
         <div>
           <span class="name">${escapeHtml(item.employee_name)}</span>
@@ -155,6 +167,7 @@ function formatTime(iso) {
   });
 }
 
+fetchEmployees();
 fetchOfficeLocation();
 startGPS();
 loadHistory();
