@@ -1,16 +1,15 @@
 const express = require("express");
 const path = require("path");
-const { getDb, persist } = require("./db");
 const { validateLocation } = require("./location");
 
 const app = express();
 app.use(express.json());
 app.use(express.static(path.join(__dirname, "public")));
 
-// Pre-init DB on cold start
-let dbReady = getDb();
+const attendance = [];
+let nextId = 1;
 
-app.post("/api/clock", async (req, res) => {
+app.post("/api/clock", (req, res) => {
   const { employee_name, action, latitude, longitude } = req.body;
 
   if (!employee_name || !action || latitude == null || longitude == null) {
@@ -28,13 +27,17 @@ app.post("/api/clock", async (req, res) => {
     });
   }
 
-  const now = new Date().toISOString();
-  const db = await dbReady;
-  db.run(
-    "INSERT INTO attendance (employee_name, action, latitude, longitude, distance, timestamp) VALUES (?, ?, ?, ?, ?, ?)",
-    [employee_name, action, latitude, longitude, loc.distance, now]
-  );
-  persist();
+  attendance.unshift({
+    id: nextId++,
+    employee_name,
+    action,
+    latitude,
+    longitude,
+    distance: loc.distance,
+    timestamp: new Date().toISOString(),
+  });
+
+  if (attendance.length > 100) attendance.length = 100;
 
   res.json({
     message: `บันทึกการ${action === "in" ? "เข้างาน" : "ออกงาน"}ของ ${employee_name} เรียบร้อย`,
@@ -42,14 +45,8 @@ app.post("/api/clock", async (req, res) => {
   });
 });
 
-app.get("/api/history", async (_req, res) => {
-  const db = await dbReady;
-  const results = db.exec("SELECT * FROM attendance ORDER BY timestamp DESC LIMIT 100");
-  const rows = results[0] ? results[0].values.map((v) => {
-    const cols = results[0].columns;
-    return cols.reduce((obj, col, i) => { obj[col] = v[i]; return obj; }, {});
-  }) : [];
-  res.json(rows);
+app.get("/api/history", (_req, res) => {
+  res.json(attendance);
 });
 
 app.get("/api/location", (_req, res) => {
@@ -57,10 +54,8 @@ app.get("/api/location", (_req, res) => {
   res.json({ office_lat: OFFICE_LAT, office_lng: OFFICE_LNG, max_distance: MAX_DISTANCE_M });
 });
 
-// Export for Vercel serverless
 module.exports = app;
 
-// Local dev
 if (require.main === module) {
   const PORT = process.env.PORT || 3000;
   app.listen(PORT, () => {
