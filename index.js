@@ -1,6 +1,9 @@
+require("dotenv").config({ path: require("path").join(__dirname, ".env.local") });
+
 const express = require("express");
 const path = require("path");
 const crypto = require("crypto");
+const { Pool } = require("@neondatabase/serverless");
 const { validateLocation } = require("./location");
 
 const app = express();
@@ -11,8 +14,23 @@ const EMPLOYEES = ["น้ำฝน รัศมี", "โชโช เซน"];
 const ADMIN_PASSWORD = "exd1919887";
 const ADMIN_TOKEN = crypto.randomBytes(32).toString("hex");
 
-const attendance = [];
-let nextId = 1;
+const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+
+async function initDb() {
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS attendance (
+      id SERIAL PRIMARY KEY,
+      employee_name TEXT NOT NULL,
+      action TEXT NOT NULL CHECK(action IN ('in','out')),
+      latitude REAL NOT NULL,
+      longitude REAL NOT NULL,
+      distance INTEGER NOT NULL,
+      device_ip TEXT NOT NULL DEFAULT '',
+      device_name TEXT NOT NULL DEFAULT '',
+      timestamp TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )
+  `);
+}
 
 function requireAdmin(req, res, next) {
   const token = req.headers.authorization;
@@ -30,13 +48,12 @@ app.post("/api/admin/login", (req, res) => {
   res.json({ token: ADMIN_TOKEN });
 });
 
-app.delete("/api/admin/record/:id", requireAdmin, (req, res) => {
+app.delete("/api/admin/record/:id", requireAdmin, async (req, res) => {
   const id = parseInt(req.params.id);
-  const idx = attendance.findIndex((r) => r.id === id);
-  if (idx === -1) {
+  const result = await pool.query("DELETE FROM attendance WHERE id = $1 RETURNING id", [id]);
+  if (result.rowCount === 0) {
     return res.status(404).json({ error: "ไม่พบ record" });
   }
-  attendance.splice(idx, 1);
   res.json({ message: "ลบ record เรียบร้อย" });
 });
 
@@ -44,7 +61,7 @@ app.get("/api/employees", (_req, res) => {
   res.json(EMPLOYEES);
 });
 
-app.post("/api/clock", (req, res) => {
+app.post("/api/clock", async (req, res) => {
   const { employee_name, action, latitude, longitude } = req.body;
 
   if (!employee_name || !action || latitude == null || longitude == null) {
@@ -68,19 +85,10 @@ app.post("/api/clock", (req, res) => {
   const ip = req.headers["x-forwarded-for"]?.split(",")[0]?.trim() || req.ip || "unknown";
   const ua = req.headers["user-agent"] || "unknown";
 
-  attendance.unshift({
-    id: nextId++,
-    employee_name,
-    action,
-    latitude,
-    longitude,
-    distance: loc.distance,
-    device_ip: ip,
-    device_name: ua,
-    timestamp: new Date().toISOString(),
-  });
-
-  if (attendance.length > 100) attendance.length = 100;
+  await pool.query(
+    "INSERT INTO attendance (employee_name, action, latitude, longitude, distance, device_ip, device_name) VALUES ($1, $2, $3, $4, $5, $6, $7)",
+    [employee_name, action, latitude, longitude, loc.distance, ip, ua]
+  );
 
   res.json({
     message: `บันทึกการ${action === "in" ? "เข้างาน" : "ออกงาน"}ของ ${employee_name} เรียบร้อย`,
@@ -88,14 +96,17 @@ app.post("/api/clock", (req, res) => {
   });
 });
 
-app.get("/api/history", (_req, res) => {
-  res.json(attendance);
+app.get("/api/history", async (_req, res) => {
+  const result = await pool.query("SELECT * FROM attendance ORDER BY timestamp DESC LIMIT 100");
+  res.json(result.rows);
 });
 
 app.get("/api/location", (_req, res) => {
   const { OFFICE_LAT, OFFICE_LNG, MAX_DISTANCE_M } = require("./location");
   res.json({ office_lat: OFFICE_LAT, office_lng: OFFICE_LNG, max_distance: MAX_DISTANCE_M });
 });
+
+initDb().catch((err) => console.error("DB init failed:", err.message));
 
 module.exports = app;
 
