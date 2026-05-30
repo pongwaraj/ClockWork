@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ClockWork</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <div class="container">
+    <h1>⏰ ClockWork</h1>
+    <p class="subtitle">ระบบบันทึกเวลาเข้างาน-ออกงาน</p>
+
+    <div class="status" id="status"></div>
+
+    <div class="card">
+      <label for="name">ชื่อพนักงาน</label>
+      <input type="text" id="name" placeholder="เช่น สมชาย ใจดี" autocomplete="name">
+
+      <div class="gps-info" id="gpsInfo">
+        <span id="gpsStatus">📍 กำลังหาสัญญาณ GPS...</span>
+        <span id="gpsCoords"></span>
+        <span id="gpsDist"></span>
+      </div>
+
+      <div class="btn-group">
+        <button class="btn btn-in" onclick="clockIn()">✅ เข้างาน</button>
+        <button class="btn btn-out" onclick="clockOut()">🚪 ออกงาน</button>
+      </div>
+    </div>
+
+    <div class="card history">
+      <h2>ประวัติล่าสุด</h2>
+      <div id="historyList"><p class="muted">กรุณากดเข้างานก่อน</p></div>
+    </div>
+  </div>
+
+  <script src="/app.js"></script>
+</body>
+</html>

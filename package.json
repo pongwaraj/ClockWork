@@ -1,0 +1,14 @@
+{
+  "name": "clockwork",
+  "version": "1.0.0",
+  "description": "ระบบเข้างาน-ออกงาน ด้วย GPS geofence",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "node --watch index.js"
+  },
+  "dependencies": {
+    "better-sqlite3": "^11.0.0",
+    "express": "^4.21.0"
+  }
+}
